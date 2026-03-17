@@ -1,0 +1,92 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Colores Optimus Moto Center */
+  --rojo:        #CC0000;
+  --rojo-oscuro: #990000;
+  --rojo-claro:  #FF1A1A;
+  --negro:       #0A0A0A;
+  --negro-soft:  #1A1A1A;
+  --gris-oscuro: #2A2A2A;
+  --gris-medio:  #555555;
+  --gris-claro:  #F1F1F1;
+  --plateado:    #C0C0C0;
+  --blanco:      #FFFFFF;
+
+  /* Semánticos */
+  --color-primary:    var(--rojo);
+  --color-bg:         #F4F4F6;
+  --color-surface:    var(--blanco);
+  --color-border:     #E2E8F0;
+  --color-text:       #1E293B;
+  --color-text-muted: #64748B;
+
+  /* Estado */
+  --verde:        #16A34A;
+  --verde-bg:     #F0FDF4;
+  --amarillo:     #D97706;
+  --amarillo-bg:  #FFFBEB;
+  --rojo-estado:  #DC2626;
+  --rojo-bg:      #FEF2F2;
+
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--gris-claro); }
+::-webkit-scrollbar-thumb { background: var(--plateado); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gris-medio); }
+
+/* Utilidades globales */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 0.5px solid transparent;
+}
+.badge-disponible { background: var(--verde-bg);    color: #15803D; border-color: #86EFAC; }
+.badge-bajo       { background: var(--amarillo-bg); color: #92400E; border-color: #FDE68A; }
+.badge-critico    { background: var(--rojo-bg);     color: #B91C1C; border-color: #FECACA; }
+.badge-sin-stock  { background: var(--rojo-bg);     color: #B91C1C; border-color: #FECACA; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 0.5px solid transparent;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--rojo); color: white; border-color: var(--rojo-oscuro); }
+.btn-primary:hover { background: var(--rojo-oscuro); }
+.btn-outline { background: white; color: var(--color-text); border-color: var(--color-border); }
+.btn-outline:hover { background: var(--gris-claro); }
+.btn-success { background: var(--verde); color: white; }
+.btn-success:hover { background: #15803D; }
+
+.card {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+}
