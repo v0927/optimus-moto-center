@@ -20,6 +20,7 @@ function getStockColor(stock, minimo) {
 const productoVacio = {
   sku: '', nombre: '', categoria: '', vehiculo: '',
   stock: 0, stock_minimo: 5, precio_compra: 0, precio_venta: 0,
+  imagen_url: null, imagen_archivo: null,
 };
 
 const inputStyle = {
@@ -34,17 +35,17 @@ const labelStyle = {
 };
 
 export default function Inventario() {
-  const [productos,      setProductos]  = useState([]);
-  const [loading,        setLoading]    = useState(true);
-  const [busqueda,       setBusqueda]   = useState('');
-  const [categoria,      setCategoria]  = useState('Todas');
-  const [estadoFiltro,   setEstado]     = useState('Todos');
-  const [pagina,         setPagina]     = useState(1);
-  const [modal,          setModal]      = useState(false);
-  const [editando,       setEditando]   = useState(null);
-  const [form,           setForm]       = useState(productoVacio);
-  const [guardando,      setGuardando]  = useState(false);
-  const [confirmDelete,  setConfirm]    = useState(null);
+  const [productos,     setProductos]  = useState([]);
+  const [loading,       setLoading]    = useState(true);
+  const [busqueda,      setBusqueda]   = useState('');
+  const [categoria,     setCategoria]  = useState('Todas');
+  const [estadoFiltro,  setEstado]     = useState('Todos');
+  const [pagina,        setPagina]     = useState(1);
+  const [modal,         setModal]      = useState(false);
+  const [editando,      setEditando]   = useState(null);
+  const [form,          setForm]       = useState(productoVacio);
+  const [guardando,     setGuardando]  = useState(false);
+  const [confirmDelete, setConfirm]    = useState(null);
   const POR_PAGINA = 8;
 
   // ── Cargar productos ──────────────────────────────────────────
@@ -62,7 +63,7 @@ export default function Inventario() {
     cargarProductos();
   }, []);
 
-  // ── Recargar después de cambios ───────────────────────────────
+  // ── Cargar productos ──────────────────────────────────────────
   async function recargar() {
     const { data } = await supabase
       .from('productos')
@@ -72,7 +73,22 @@ export default function Inventario() {
     setProductos(data || []);
   }
 
-  // ── Filtros ───────────────────────────────────────────────────
+  async function subirImagen(archivo, sku) {
+    const extension = archivo.name.split('.').pop();
+    const nombre    = `${sku}-${Date.now()}.${extension}`;
+    const { error } = await supabase.storage
+      .from('productos')
+      .upload(nombre, archivo, { upsert: true });
+    if (error) {
+      alert('Error al subir la imagen');
+      return null;
+    }
+    const { data } = supabase.storage
+      .from('productos')
+      .getPublicUrl(nombre);
+    return data.publicUrl;
+  }
+
   const filtrados = productos.filter(p => {
     const texto = busqueda.toLowerCase();
     const coincideBusqueda =
@@ -85,9 +101,9 @@ export default function Inventario() {
 
     const badge = getEstadoBadge(p.stock, p.stock_minimo).texto;
     const coincideEstado =
-      estadoFiltro === 'Todos'                                  ||
-      (estadoFiltro === 'Disponible' && badge === 'Disponible') ||
-      (estadoFiltro === 'Bajo'       && badge === 'Bajo')       ||
+      estadoFiltro === 'Todos'                                   ||
+      (estadoFiltro === 'Disponible' && badge === 'Disponible')  ||
+      (estadoFiltro === 'Bajo'       && badge === 'Bajo')        ||
       (estadoFiltro === 'Crítico'    && badge === 'Sin stock');
 
     return coincideBusqueda && coincideCategoria && coincideEstado;
@@ -107,14 +123,16 @@ export default function Inventario() {
   function abrirEditar(p) {
     setEditando(p.id);
     setForm({
-      sku:           p.sku,
-      nombre:        p.nombre,
-      categoria:     p.categoria    || '',
-      vehiculo:      p.vehiculo     || '',
-      stock:         p.stock,
-      stock_minimo:  p.stock_minimo,
-      precio_compra: p.precio_compra,
-      precio_venta:  p.precio_venta,
+      sku:            p.sku,
+      nombre:         p.nombre,
+      categoria:      p.categoria    || '',
+      vehiculo:       p.vehiculo     || '',
+      stock:          p.stock,
+      stock_minimo:   p.stock_minimo,
+      precio_compra:  p.precio_compra,
+      precio_venta:   p.precio_venta,
+      imagen_url:     p.imagen_url   || null,
+      imagen_archivo: null,
     });
     setModal(true);
   }
@@ -126,6 +144,10 @@ export default function Inventario() {
       return;
     }
     setGuardando(true);
+    let imagen_url = form.imagen_url || null;
+    if (form.imagen_archivo) {
+      imagen_url = await subirImagen(form.imagen_archivo, form.sku);
+    }
     const datos = {
       sku:           form.sku,
       nombre:        form.nombre,
@@ -135,6 +157,7 @@ export default function Inventario() {
       stock_minimo:  parseInt(form.stock_minimo),
       precio_compra: parseFloat(form.precio_compra),
       precio_venta:  parseFloat(form.precio_venta),
+      imagen_url,
     };
     if (editando) {
       await supabase.from('productos').update(datos).eq('id', editando);
@@ -146,7 +169,7 @@ export default function Inventario() {
     recargar();
   }
 
-  // ── Eliminar ──────────────────────────────────────────────────
+    // ── Eliminar ──────────────────────────────────────────────────
   async function eliminar(id) {
     await supabase.from('productos').update({ activo: false }).eq('id', id);
     setConfirm(null);
@@ -158,7 +181,7 @@ export default function Inventario() {
     setForm(prev => ({ ...prev, [campo]: valor }));
   }
 
-  // ── Loading ───────────────────────────────────────────────────
+  
   if (loading) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
@@ -184,12 +207,10 @@ export default function Inventario() {
       {/* Filtros */}
       <div className="card" style={{ marginBottom:'16px' }}>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr auto', gap:'10px' }}>
-          <input
-            style={inputStyle}
+          <input style={inputStyle}
             placeholder="Buscar por nombre, SKU, vehículo..."
             value={busqueda}
-            onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
-          />
+            onChange={e => { setBusqueda(e.target.value); setPagina(1); }} />
           <select style={inputStyle} value={categoria}
             onChange={e => { setCategoria(e.target.value); setPagina(1); }}>
             {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -200,9 +221,7 @@ export default function Inventario() {
           </select>
           <button className="btn btn-outline" onClick={() => {
             setBusqueda(''); setCategoria('Todas'); setEstado('Todos'); setPagina(1);
-          }}>
-            Limpiar
-          </button>
+          }}>Limpiar</button>
         </div>
       </div>
 
@@ -210,8 +229,9 @@ export default function Inventario() {
       <div className="card" style={{ padding:0, overflow:'hidden' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
           <thead>
-            <tr style={{ background:'var(--gris-claro)', borderBottom:'0.5px solid var(--color-border)' }}>
-              {['SKU','Nombre del Producto','Categoría','Vehículo Compatible',
+            <tr style={{ background:'var(--gris-claro)',
+              borderBottom:'0.5px solid var(--color-border)' }}>
+              {['Imagen','SKU','Nombre del Producto','Categoría','Vehículo Compatible',
                 'Stock','Precio Compra','Precio Venta','Estado','Acciones'].map(h => (
                 <th key={h} style={{ textAlign:'left', padding:'10px 12px',
                   fontSize:'11px', fontWeight:600, color:'var(--color-text-muted)',
@@ -222,7 +242,7 @@ export default function Inventario() {
           <tbody>
             {paginados.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign:'center', padding:'32px',
+                <td colSpan={10} style={{ textAlign:'center', padding:'32px',
                   color:'var(--color-text-muted)', fontSize:'13px' }}>
                   No se encontraron productos
                 </td>
@@ -234,6 +254,20 @@ export default function Inventario() {
                   borderBottom:'0.5px solid var(--color-border)',
                   background: i % 2 === 0 ? 'white' : '#FAFAFA',
                 }}>
+                  <td style={{ padding:'10px 12px' }}>
+                    {p.imagen_url ? (
+                      <img src={p.imagen_url} alt={p.nombre}
+                        style={{ width:'40px', height:'40px', objectFit:'cover',
+                          borderRadius:'6px', border:'0.5px solid var(--color-border)' }} />
+                    ) : (
+                      <div style={{ width:'40px', height:'40px',
+                        background:'var(--gris-claro)', borderRadius:'6px',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:'10px', color:'var(--color-text-muted)' }}>
+                        IMG
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding:'10px 12px', fontWeight:600, color:'#1A56DB' }}>{p.sku}</td>
                   <td style={{ padding:'10px 12px', fontWeight:500 }}>{p.nombre}</td>
                   <td style={{ padding:'10px 12px', color:'var(--color-text-muted)' }}>{p.categoria}</td>
@@ -252,10 +286,12 @@ export default function Inventario() {
                   <td style={{ padding:'10px 12px' }}>
                     <div style={{ display:'flex', gap:'8px' }}>
                       <button onClick={() => abrirEditar(p)}
-                        style={{ background:'none', border:'none', cursor:'pointer', fontSize:'16px' }}
+                        style={{ background:'none', border:'none',
+                          cursor:'pointer', fontSize:'16px' }}
                         title="Editar">✏️</button>
                       <button onClick={() => setConfirm(p)}
-                        style={{ background:'none', border:'none', cursor:'pointer', fontSize:'16px' }}
+                        style={{ background:'none', border:'none',
+                          cursor:'pointer', fontSize:'16px' }}
                         title="Eliminar">🗑️</button>
                     </div>
                   </td>
@@ -267,17 +303,18 @@ export default function Inventario() {
 
         {/* Paginación */}
         {totalPaginas > 1 && (
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-            padding:'12px 16px', borderTop:'0.5px solid var(--color-border)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between',
+            alignItems:'center', padding:'12px 16px',
+            borderTop:'0.5px solid var(--color-border)' }}>
             <span style={{ fontSize:'12px', color:'var(--color-text-muted)' }}>
-              Mostrando {((pagina-1)*POR_PAGINA)+1} a {Math.min(pagina*POR_PAGINA, filtrados.length)} de {filtrados.length} resultados
+              Mostrando {((pagina-1)*POR_PAGINA)+1} a {Math.min(pagina*POR_PAGINA,
+              filtrados.length)} de {filtrados.length} resultados
             </span>
             <div style={{ display:'flex', gap:'6px' }}>
-              <button className="btn btn-outline" style={{ padding:'4px 10px', fontSize:'12px' }}
+              <button className="btn btn-outline"
+                style={{ padding:'4px 10px', fontSize:'12px' }}
                 onClick={() => setPagina(p => Math.max(1, p - 1))}
-                disabled={pagina === 1}>
-                Anterior
-              </button>
+                disabled={pagina === 1}>Anterior</button>
               {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
                 <button key={n} onClick={() => setPagina(n)} style={{
                   padding:'4px 10px', fontSize:'12px', borderRadius:'6px',
@@ -287,11 +324,10 @@ export default function Inventario() {
                   fontWeight: n === pagina ? 600 : 400,
                 }}>{n}</button>
               ))}
-              <button className="btn btn-outline" style={{ padding:'4px 10px', fontSize:'12px' }}
+              <button className="btn btn-outline"
+                style={{ padding:'4px 10px', fontSize:'12px' }}
                 onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-                disabled={pagina === totalPaginas}>
-                Siguiente
-              </button>
+                disabled={pagina === totalPaginas}>Siguiente</button>
             </div>
           </div>
         )}
@@ -367,9 +403,41 @@ export default function Inventario() {
                   value={form.precio_venta}
                   onChange={e => handleForm('precio_venta', e.target.value)} />
               </div>
+
+              {/* Campo imagen — DENTRO del grid */}
+              <div style={{ gridColumn:'1 / -1' }}>
+                <label style={labelStyle}>Imagen del producto</label>
+
+                {form.imagen_url && !form.imagen_archivo && (
+                  <div style={{ marginBottom:'8px' }}>
+                    <img src={form.imagen_url} alt="preview"
+                      style={{ width:'80px', height:'80px', objectFit:'cover',
+                        borderRadius:'8px', border:'0.5px solid var(--color-border)' }} />
+                  </div>
+                )}
+
+                {form.imagen_archivo && (
+                  <div style={{ marginBottom:'8px' }}>
+                    <img src={URL.createObjectURL(form.imagen_archivo)} alt="preview"
+                      style={{ width:'80px', height:'80px', objectFit:'cover',
+                        borderRadius:'8px', border:'0.5px solid var(--color-border)' }} />
+                  </div>
+                )}
+
+                <input type="file" accept="image/*"
+                  style={{ ...inputStyle, padding:'6px' }}
+                  onChange={e => {
+                    const archivo = e.target.files[0];
+                    if (archivo) handleForm('imagen_archivo', archivo);
+                  }} />
+                <p style={{ fontSize:'11px', color:'var(--color-text-muted)', marginTop:'4px' }}>
+                  Formatos: JPG, PNG, WEBP. Máximo 2MB.
+                </p>
+              </div>
             </div>
 
-            <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end', marginTop:'20px' }}>
+            <div style={{ display:'flex', gap:'10px',
+              justifyContent:'flex-end', marginTop:'20px' }}>
               <button className="btn btn-outline" onClick={() => setModal(false)}>
                 Cancelar
               </button>
@@ -398,8 +466,10 @@ export default function Inventario() {
               <button className="btn btn-outline" onClick={() => setConfirm(null)}>
                 Cancelar
               </button>
-              <button className="btn btn-red" onClick={() => eliminar(confirmDelete.id)}
-                style={{ background:'#DC2626', color:'white', border:'none' }}>
+              <button onClick={() => eliminar(confirmDelete.id)}
+                style={{ background:'#DC2626', color:'white', border:'none',
+                  padding:'8px 16px', borderRadius:'8px', cursor:'pointer',
+                  fontSize:'13px', fontWeight:500 }}>
                 Sí, eliminar
               </button>
             </div>
