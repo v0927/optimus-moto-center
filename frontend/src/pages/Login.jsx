@@ -86,7 +86,7 @@ export default function Login() {
             <input
               type="email"
               style={inputStyle}
-              placeholder="admin@optimus.com"
+              placeholder="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               autoComplete="email"
