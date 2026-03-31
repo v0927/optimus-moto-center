@@ -5,6 +5,8 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
@@ -21,10 +23,78 @@ function TooltipLempiras({ active, payload, label }) {
 }
 
 // ── Exportar Excel fuera del componente ───────────────────────
-function exportarExcel() {
-  const ahora  = new Date();
-  const nombre = `reporte-optimus-${ahora.getFullYear()}-${ahora.getMonth()+1}.csv`;
-  alert(`Función de exportación disponible próximamente.\nArchivo: ${nombre}`);
+async function exportarExcel(ventasMensuales, topProductos, ventasCategoria, metricas) {
+  const workbook  = new ExcelJS.Workbook();
+  const ahora     = new Date();
+  const fechaStr  = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}`;
+
+  // ── Estilo de encabezado ──────────────────────────────────────
+  const estiloHeader = {
+    font:      { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 },
+    fill:      { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } },
+    alignment: { horizontal: 'center', vertical: 'middle' },
+    border: {
+      bottom: { style: 'thin', color: { argb: 'FF990000' } },
+    },
+  };
+
+  // ── Hoja 1: Ventas Mensuales ──────────────────────────────────
+  const hoja1 = workbook.addWorksheet('Ventas Mensuales');
+  hoja1.columns = [
+    { header: 'Mes',           key: 'mes',   width: 15 },
+    { header: 'Total (L)',     key: 'total', width: 20 },
+  ];
+  hoja1.getRow(1).eachCell(cell => Object.assign(cell, estiloHeader));
+  ventasMensuales.forEach(v => {
+    hoja1.addRow({ mes: v.mes, total: parseFloat(v.total.toFixed(2)) });
+  });
+
+  // ── Hoja 2: Top Productos ─────────────────────────────────────
+  const hoja2 = workbook.addWorksheet('Top Productos');
+  hoja2.columns = [
+    { header: 'Posición',    key: 'pos',     width: 12 },
+    { header: 'Producto',    key: 'nombre',  width: 40 },
+    { header: 'Ingresos (L)',key: 'total',   width: 20 },
+  ];
+  hoja2.getRow(1).eachCell(cell => Object.assign(cell, estiloHeader));
+  topProductos.forEach((p, i) => {
+    hoja2.addRow({ pos: i + 1, nombre: p.nombre, total: parseFloat(p.total.toFixed(2)) });
+  });
+
+  // ── Hoja 3: Por Categoría ─────────────────────────────────────
+  const hoja3 = workbook.addWorksheet('Por Categoría');
+  hoja3.columns = [
+    { header: 'Categoría',    key: 'categoria', width: 25 },
+    { header: 'Total (L)',    key: 'total',     width: 20 },
+  ];
+  hoja3.getRow(1).eachCell(cell => Object.assign(cell, estiloHeader));
+  ventasCategoria.forEach(c => {
+    hoja3.addRow({ categoria: c.categoria, total: parseFloat(c.total.toFixed(2)) });
+  });
+
+  // ── Hoja 4: Métricas Generales ────────────────────────────────
+  const hoja4 = workbook.addWorksheet('Métricas');
+  hoja4.columns = [
+    { header: 'Métrica', key: 'metrica', width: 30 },
+    { header: 'Valor',   key: 'valor',   width: 25 },
+  ];
+  hoja4.getRow(1).eachCell(cell => Object.assign(cell, estiloHeader));
+  [
+    { metrica: 'Margen Bruto %',      valor: `${metricas.margenBruto}%`                                             },
+    { metrica: 'Total de Ventas (L)', valor: metricas.totalVentas.toFixed(2)                                        },
+    { metrica: 'Transacciones',       valor: metricas.totalTransacc                                                 },
+    { metrica: 'Promedio por Venta',  valor: metricas.totalTransacc > 0
+        ? (metricas.totalVentas / metricas.totalTransacc).toFixed(2) : '0.00'                                       },
+    { metrica: 'Producto Top',        valor: metricas.productoTop                                                   },
+    { metrica: 'Fecha del reporte',   valor: ahora.toLocaleDateString('es-HN')                                      },
+  ].forEach(r => hoja4.addRow(r));
+
+  // ── Descargar ─────────────────────────────────────────────────
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob   = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  saveAs(blob, `reporte-optimus-${fechaStr}.xlsx`);
 }
 
 export default function Reportes() {
@@ -164,7 +234,7 @@ export default function Reportes() {
             Exportar PDF
           </button>
           <button className="btn btn-primary"
-            onClick={exportarExcel}
+            onClick={() => exportarExcel(ventasMensuales, topProductos, ventasCategoria, metricas)}
             style={{ fontSize:'12px' }}>
             Exportar Excel
           </button>
