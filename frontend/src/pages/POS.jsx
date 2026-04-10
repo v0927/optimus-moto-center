@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { formatLempiras } from '../utils/format';
+import { useWindowSize } from '../useWindowSize';
 
 const IVA = 0.15;
-
-const inputStyle = {
-  width: '100%', padding: '8px 10px', fontSize: '13px',
-  border: '0.5px solid var(--color-border)', borderRadius: '8px',
-  background: 'var(--color-surface)', color: 'var(--color-text)', outline: 'none',
-};
 
 function getEstadoBadge(stock, minimo) {
   if (stock === 0)     return { clase: 'badge-critico',    texto: 'Sin stock'  };
@@ -24,6 +19,9 @@ export default function POS() {
   const [loading,     setLoading]    = useState(true);
   const [confirmando, setConfirmando]= useState(false);
   const [exitoVenta,  setExitoVenta] = useState(null);
+
+  const { isMobile, isTablet } = useWindowSize();
+  const esMovil = isMobile || isTablet;
 
   useEffect(() => {
     async function cargarProductos() {
@@ -51,8 +49,8 @@ export default function POS() {
   const productosFiltrados = productos.filter(p => {
     const texto = busqueda.toLowerCase();
     return (
-      p.nombre.toLowerCase().includes(texto)       ||
-      p.sku.toLowerCase().includes(texto)           ||
+      p.nombre.toLowerCase().includes(texto)             ||
+      p.sku.toLowerCase().includes(texto)                ||
       (p.categoria || '').toLowerCase().includes(texto)
     );
   });
@@ -77,8 +75,8 @@ export default function POS() {
         .map(i => {
           if (i.id !== id) return i;
           const nueva = i.cantidad + delta;
-          if (nueva <= 0)          return null;
-          if (nueva > i.stock)     return i;
+          if (nueva <= 0)      return null;
+          if (nueva > i.stock) return i;
           return { ...i, cantidad: nueva };
         })
         .filter(Boolean)
@@ -108,7 +106,6 @@ export default function POS() {
         }])
         .select()
         .single();
-
       if (ventaError) throw ventaError;
 
       const items = carrito.map(i => ({
@@ -118,11 +115,7 @@ export default function POS() {
         precio:      i.precio_venta,
         subtotal:    parseFloat((i.precio_venta * i.cantidad).toFixed(2)),
       }));
-
-      const { error: itemsError } = await supabase
-        .from('venta_items')
-        .insert(items);
-
+      const { error: itemsError } = await supabase.from('venta_items').insert(items);
       if (itemsError) throw itemsError;
 
       for (const item of carrito) {
@@ -132,16 +125,10 @@ export default function POS() {
           .eq('id', item.id);
       }
 
-      setExitoVenta({
-        id:         ventaData.id,
-        total:      total,
-        metodoPago: metodoPago,
-        items:      carrito,
-      });
+      setExitoVenta({ id: ventaData.id, total, metodoPago, items: carrito });
       setCarrito([]);
       setMetodoPago('Efectivo');
       recargarProductos();
-
     } catch (error) {
       alert('Error al procesar la venta. Intenta de nuevo.');
       console.error(error);
@@ -149,25 +136,34 @@ export default function POS() {
     setConfirmando(false);
   }
 
-  if (loading) {
-    return (
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
-        height:'60vh', fontSize:'14px', color:'var(--color-text-muted)' }}>
-        Cargando productos...
-      </div>
-    );
-  }
+  const inputStyle = {
+    width: '100%', padding: '8px 10px', fontSize: '13px',
+    border: '0.5px solid var(--color-border)', borderRadius: '8px',
+    background: 'var(--color-surface)', color: 'var(--color-text)', outline: 'none',
+  };
+
+  if (loading) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
+      height:'60vh', fontSize:'14px', color:'var(--color-text-muted)' }}>
+      Cargando productos...
+    </div>
+  );
 
   return (
-    <div style={{ padding:'24px', maxWidth:'1400px', margin:'0 auto' }}>
-      <h1 style={{ fontSize:'22px', fontWeight:700, marginBottom:'20px' }}>
+    <div style={{ padding: esMovil ? '16px' : '24px',
+      maxWidth:'1400px', margin:'0 auto' }}>
+      <h1 style={{ fontSize: esMovil ? '18px' : '22px',
+        fontWeight:700, marginBottom:'20px' }}>
         Punto de Venta
       </h1>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:'20px',
-        alignItems:'start' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: esMovil ? '1fr' : '1fr 380px',
+        gap: '20px', alignItems: 'start',
+      }}>
 
-        {/* ── Columna izquierda: productos ── */}
+        {/* Productos */}
         <div>
           <input
             style={{ ...inputStyle, marginBottom:'16px' }}
@@ -176,73 +172,63 @@ export default function POS() {
             onChange={e => setBusqueda(e.target.value)}
           />
 
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'12px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? 'repeat(3,1fr)' : 'repeat(3,1fr)',
+            gap: '12px',
+          }}>
             {productosFiltrados.map(p => {
               const { clase, texto } = getEstadoBadge(p.stock, p.stock_minimo);
               const enCarrito = carrito.find(i => i.id === p.id);
               const sinStock  = p.stock === 0;
 
               return (
-                <div key={p.id}
-                  onClick={() => agregarAlCarrito(p)}
+                <div key={p.id} onClick={() => agregarAlCarrito(p)}
                   className="card"
                   style={{
                     cursor:      sinStock ? 'not-allowed' : 'pointer',
                     opacity:     sinStock ? 0.5 : 1,
-                    transition:  'all .15s',
+                    transition:  'all .15s', padding: '12px',
                     borderColor: enCarrito ? '#CC0000' : 'var(--color-border)',
                     borderWidth: enCarrito ? '1.5px' : '0.5px',
-                    padding:     '12px',
                   }}>
-
-                  {/* Imagen del producto */}
                   {p.imagen_url ? (
-                    <img
-                      src={p.imagen_url}
-                      alt={p.nombre}
-                      style={{ width:'100%', height:'120px', objectFit:'cover',
-                        borderRadius:'8px', marginBottom:'10px',
-                        border:'0.5px solid var(--color-border)' }}
-                    />
+                    <img src={p.imagen_url} alt={p.nombre}
+                      style={{ width:'100%', height: isMobile ? '80px' : '120px',
+                        objectFit:'cover', borderRadius:'8px', marginBottom:'10px',
+                        border:'0.5px solid var(--color-border)' }} />
                   ) : (
-                    <div style={{ width:'100%', height:'120px',
+                    <div style={{ width:'100%', height: isMobile ? '80px' : '120px',
                       background:'var(--gris-claro)', borderRadius:'8px',
                       marginBottom:'10px', display:'flex', alignItems:'center',
                       justifyContent:'center', color:'var(--color-text-muted)',
-                      fontSize:'11px' }}>
-                      Sin imagen
-                    </div>
+                      fontSize:'11px' }}>Sin imagen</div>
                   )}
-
                   <div style={{ fontSize:'11px', color:'var(--color-text-muted)',
                     marginBottom:'2px' }}>{p.sku}</div>
-                  <div style={{ fontSize:'13px', fontWeight:600,
-                    marginBottom:'6px', lineHeight:1.3 }}>{p.nombre}</div>
-
+                  <div style={{ fontSize: isMobile ? '12px' : '13px',
+                    fontWeight:600, marginBottom:'6px', lineHeight:1.3 }}>
+                    {p.nombre}
+                  </div>
                   <div style={{ display:'flex', justifyContent:'space-between',
-                    alignItems:'center', marginBottom:'6px' }}>
-                    <span style={{ fontSize:'15px', fontWeight:700,
-                      color:'#CC0000' }}>{formatLempiras(p.precio_venta)}</span>
+                    alignItems:'center', marginBottom:'6px', flexWrap:'wrap', gap:'4px' }}>
+                    <span style={{ fontSize: isMobile ? '13px' : '15px',
+                      fontWeight:700, color:'#CC0000' }}>
+                      {formatLempiras(p.precio_venta)}
+                    </span>
                     <span className={`badge ${clase}`}>{texto}</span>
                   </div>
-
                   <div style={{ fontSize:'11px', color:'var(--color-text-muted)',
-                    marginBottom:'10px' }}>Stock: {p.stock}</div>
-
-                  <button
-                    disabled={sinStock}
-                    style={{
-                      width:'100%', padding:'7px', fontSize:'12px', fontWeight:500,
-                      borderRadius:'6px', border:'none',
-                      cursor:     sinStock ? 'not-allowed' : 'pointer',
-                      background: enCarrito ? '#CC0000' : '#1A56DB',
-                      color:      'white', transition:'all .15s',
-                    }}>
-                    {sinStock
-                      ? 'Sin stock'
-                      : enCarrito
-                        ? `En carrito (${enCarrito.cantidad})`
-                        : 'Agregar al carrito'}
+                    marginBottom:'8px' }}>Stock: {p.stock}</div>
+                  <button disabled={sinStock} style={{
+                    width:'100%', padding: isMobile ? '6px' : '7px',
+                    fontSize:'12px', fontWeight:500, borderRadius:'6px',
+                    border:'none', cursor: sinStock ? 'not-allowed' : 'pointer',
+                    background: enCarrito ? '#CC0000' : '#1A56DB',
+                    color: 'white', transition:'all .15s',
+                  }}>
+                    {sinStock ? 'Sin stock' : enCarrito
+                      ? `En carrito (${enCarrito.cantidad})` : 'Agregar'}
                   </button>
                 </div>
               );
@@ -250,8 +236,9 @@ export default function POS() {
           </div>
         </div>
 
-        {/* ── Columna derecha: carrito ── */}
-        <div className="card" style={{ position:'sticky', top:'76px' }}>
+        {/* Carrito */}
+        <div className="card"
+          style={{ position: esMovil ? 'static' : 'sticky', top:'76px' }}>
           <h2 style={{ fontSize:'15px', fontWeight:700, marginBottom:'16px' }}>
             Resumen del Pedido
           </h2>
@@ -271,8 +258,6 @@ export default function POS() {
               {carrito.map(item => (
                 <div key={item.id} style={{ background:'var(--gris-claro)',
                   borderRadius:'8px', padding:'10px' }}>
-
-                  {/* Imagen miniatura en carrito */}
                   <div style={{ display:'flex', gap:'8px',
                     alignItems:'flex-start', marginBottom:'6px' }}>
                     {item.imagen_url ? (
@@ -282,18 +267,15 @@ export default function POS() {
                           border:'0.5px solid var(--color-border)' }} />
                     ) : (
                       <div style={{ width:'36px', height:'36px', flexShrink:0,
-                        background:'white', borderRadius:'6px',
-                        display:'flex', alignItems:'center', justifyContent:'center',
+                        background:'white', borderRadius:'6px', display:'flex',
+                        alignItems:'center', justifyContent:'center',
                         fontSize:'9px', color:'var(--color-text-muted)',
-                        border:'0.5px solid var(--color-border)' }}>
-                        IMG
-                      </div>
+                        border:'0.5px solid var(--color-border)' }}>IMG</div>
                     )}
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:'12px', fontWeight:500,
-                        lineHeight:1.3, marginBottom:'2px',
-                        overflow:'hidden', textOverflow:'ellipsis',
-                        whiteSpace:'nowrap' }}>
+                      <div style={{ fontSize:'12px', fontWeight:500, lineHeight:1.3,
+                        marginBottom:'2px', overflow:'hidden',
+                        textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {item.nombre}
                       </div>
                       <div style={{ fontSize:'11px', color:'var(--color-text-muted)' }}>
@@ -305,7 +287,6 @@ export default function POS() {
                         color:'var(--color-text-muted)', fontSize:'14px',
                         padding:'0', lineHeight:1, flexShrink:0 }}>✕</button>
                   </div>
-
                   <div style={{ display:'flex', justifyContent:'space-between',
                     alignItems:'center' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
@@ -335,17 +316,14 @@ export default function POS() {
             </div>
           )}
 
-          {/* Totales */}
           <div style={{ borderTop:'0.5px solid var(--color-border)', paddingTop:'12px' }}>
             <div style={{ display:'flex', justifyContent:'space-between',
               fontSize:'13px', color:'var(--color-text-muted)', marginBottom:'6px' }}>
-              <span>Subtotal</span>
-              <span>{formatLempiras(subtotal)}</span>
+              <span>Subtotal</span><span>{formatLempiras(subtotal)}</span>
             </div>
             <div style={{ display:'flex', justifyContent:'space-between',
               fontSize:'13px', color:'var(--color-text-muted)', marginBottom:'10px' }}>
-              <span>IVA (15%)</span>
-              <span>{formatLempiras(iva)}</span>
+              <span>IVA (15%)</span><span>{formatLempiras(iva)}</span>
             </div>
             <div style={{ display:'flex', justifyContent:'space-between',
               fontSize:'17px', fontWeight:700, marginBottom:'16px' }}>
@@ -353,39 +331,36 @@ export default function POS() {
               <span style={{ color:'#CC0000' }}>{formatLempiras(total)}</span>
             </div>
 
-            {/* Método de pago */}
             <div style={{ marginBottom:'14px' }}>
               <label style={{ fontSize:'12px', fontWeight:500,
                 color:'var(--color-text-muted)', display:'block', marginBottom:'6px' }}>
                 Método de Pago
               </label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px' }}>
-                {['Efectivo', 'Tarjeta', 'Crédito'].map(m => (
+                {['Efectivo','Tarjeta','Crédito'].map(m => (
                   <button key={m} onClick={() => setMetodoPago(m)} style={{
                     padding:'7px', fontSize:'12px', fontWeight:500,
                     borderRadius:'6px', cursor:'pointer', transition:'all .15s',
-                    border:      metodoPago === m ? '2px solid #CC0000' : '0.5px solid var(--color-border)',
-                    background:  metodoPago === m ? '#FEF2F2' : 'white',
-                    color:       metodoPago === m ? '#CC0000' : 'var(--color-text)',
+                    border:     metodoPago === m ? '2px solid #CC0000' : '0.5px solid var(--color-border)',
+                    background: metodoPago === m ? '#FEF2F2' : 'white',
+                    color:      metodoPago === m ? '#CC0000' : 'var(--color-text)',
                   }}>{m}</button>
                 ))}
               </div>
             </div>
 
-            <button
-              onClick={confirmarVenta}
+            <button onClick={confirmarVenta}
               disabled={carrito.length === 0 || confirmando}
               style={{
                 width:'100%', padding:'10px', fontSize:'14px', fontWeight:600,
                 borderRadius:'8px', border:'none',
                 cursor:     carrito.length === 0 ? 'not-allowed' : 'pointer',
                 background: carrito.length === 0 ? '#CBD5E0' : '#16A34A',
-                color:      'white', marginBottom:'8px', transition:'all .15s',
+                color:'white', marginBottom:'8px', transition:'all .15s',
               }}>
               {confirmando ? 'Procesando...' : 'Confirmar Venta'}
             </button>
-            <button
-              onClick={() => setCarrito([])}
+            <button onClick={() => setCarrito([])}
               disabled={carrito.length === 0}
               style={{
                 width:'100%', padding:'10px', fontSize:'13px', fontWeight:500,
@@ -404,17 +379,14 @@ export default function POS() {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)',
           display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
           <div style={{ background:'white', borderRadius:'12px', padding:'28px',
-            width:'420px', maxWidth:'95vw', textAlign:'center' }}>
-
+            width: esMovil ? '95vw' : '420px', maxWidth:'95vw', textAlign:'center' }}>
             <div style={{ fontSize:'48px', marginBottom:'12px' }}>✅</div>
             <h2 style={{ fontSize:'18px', fontWeight:700, marginBottom:'6px' }}>
               ¡Venta completada!
             </h2>
-            <p style={{ fontSize:'13px', color:'var(--color-text-muted)',
-              marginBottom:'16px' }}>
+            <p style={{ fontSize:'13px', color:'var(--color-text-muted)', marginBottom:'16px' }}>
               Venta #{exitoVenta.id} · {exitoVenta.metodoPago}
             </p>
-
             <div style={{ background:'var(--gris-claro)', borderRadius:'8px',
               padding:'14px', marginBottom:'20px', textAlign:'left' }}>
               {exitoVenta.items.map(i => (
@@ -428,9 +400,7 @@ export default function POS() {
                     <div style={{ width:'32px', height:'32px', flexShrink:0,
                       background:'white', borderRadius:'4px', display:'flex',
                       alignItems:'center', justifyContent:'center',
-                      fontSize:'9px', color:'var(--color-text-muted)' }}>
-                      IMG
-                    </div>
+                      fontSize:'9px', color:'var(--color-text-muted)' }}>IMG</div>
                   )}
                   <span style={{ flex:1, fontSize:'13px' }}>
                     {i.cantidad}x {i.nombre}
@@ -447,7 +417,6 @@ export default function POS() {
                 <span style={{ color:'#CC0000' }}>{formatLempiras(exitoVenta.total)}</span>
               </div>
             </div>
-
             <button className="btn btn-primary" style={{ width:'100%' }}
               onClick={() => setExitoVenta(null)}>
               Nueva venta

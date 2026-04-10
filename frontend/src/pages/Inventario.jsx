@@ -206,7 +206,7 @@ export default function Inventario() {
 
       {/* Filtros */}
       <div className="card" style={{ marginBottom:'16px' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr auto', gap:'10px' }}>
+        <div className="filtros-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr auto', gap:'10px' }}>
           <input style={inputStyle}
             placeholder="Buscar por nombre, SKU, vehículo..."
             value={busqueda}
@@ -226,7 +226,7 @@ export default function Inventario() {
       </div>
 
       {/* Tabla */}
-      <div className="card" style={{ padding:0, overflow:'hidden' }}>
+      <div className="card inv-table-wrap" style={{ padding:0, overflow:'hidden' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
           <thead>
             <tr style={{ background:'var(--gris-claro)',
