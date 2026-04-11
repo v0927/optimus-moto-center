@@ -195,16 +195,16 @@ export default function Reportes() {
         <h1 style={{ fontSize: esMovil ? '18px' : '22px', fontWeight:700 }}>
           Panel de Reportes
         </h1>
-        <div style={{ display:'flex', gap:'8px' }}>
+        <div style={{ display:'flex', gap:'8px', flexWrap: esMovil ? 'wrap' : 'nowrap' }}>
           <button className="btn btn-outline"
             onClick={() => window.print()}
-            style={{ fontSize:'12px' }}>
-            Exportar PDF
+            style={{ fontSize: esMovil ? '11px' : '12px', padding: esMovil ? '6px 10px' : '8px 12px' }}>
+            {esMovil ? 'PDF' : 'Exportar PDF'}
           </button>
           <button className="btn btn-primary"
             onClick={() => exportarExcel(ventasMensuales, topProductos, ventasCategoria, metricas)}
-            style={{ fontSize:'12px' }}>
-            Exportar Excel
+            style={{ fontSize: esMovil ? '11px' : '12px', padding: esMovil ? '6px 10px' : '8px 12px' }}>
+            {esMovil ? 'Excel' : 'Exportar Excel'}
           </button>
         </div>
       </div>

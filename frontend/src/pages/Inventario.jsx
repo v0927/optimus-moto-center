@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { formatLempiras } from '../utils/format';
+import { useWindowSize } from '../useWindowSize';
 
 const CATEGORIAS = ['Todas', 'Filtros', 'Frenos', 'Lubricantes', 'Eléctricos', 'Accesorios'];
 const ESTADOS    = ['Todos', 'Disponible', 'Bajo', 'Crítico'];
@@ -46,7 +47,9 @@ export default function Inventario() {
   const [form,          setForm]       = useState(productoVacio);
   const [guardando,     setGuardando]  = useState(false);
   const [confirmDelete, setConfirm]    = useState(null);
-  const POR_PAGINA = 8;
+  const { isMobile, isTablet } = useWindowSize();
+  const esMovil = isMobile || isTablet;
+  const POR_PAGINA = esMovil ? 5 : 8;
 
   // ── Cargar productos ──────────────────────────────────────────
   useEffect(() => {
@@ -193,20 +196,21 @@ export default function Inventario() {
 
   // ── Render ────────────────────────────────────────────────────
   return (
-    <div style={{ padding:'24px', maxWidth:'1400px', margin:'0 auto' }}>
+    <div style={{ padding: esMovil ? '16px' : '24px', maxWidth:'1400px', margin:'0 auto' }}>
 
       {/* Header */}
       <div style={{ display:'flex', justifyContent:'space-between',
-        alignItems:'center', marginBottom:'20px' }}>
-        <h1 style={{ fontSize:'22px', fontWeight:700 }}>Inventario</h1>
-        <button className="btn btn-primary" onClick={abrirAgregar}>
-          + Agregar Producto
+        alignItems:'center', marginBottom:'20px', flexWrap: esMovil ? 'wrap' : 'nowrap', gap: '10px' }}>
+        <h1 style={{ fontSize: esMovil ? '18px' : '22px', fontWeight:700 }}>Inventario</h1>
+        <button className="btn btn-primary" onClick={abrirAgregar}
+          style={{ fontSize: esMovil ? '12px' : '13px', padding: esMovil ? '7px 12px' : '8px 16px' }}>
+          {esMovil ? '+ Agregar' : '+ Agregar Producto'}
         </button>
       </div>
 
       {/* Filtros */}
       <div className="card" style={{ marginBottom:'16px' }}>
-        <div className="filtros-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr auto', gap:'10px' }}>
+        <div className="filtros-grid" style={{ display:'grid', gridTemplateColumns: esMovil ? '1fr' : '1fr 1fr 1fr auto', gap: esMovil ? '8px' : '10px' }}>
           <input style={inputStyle}
             placeholder="Buscar por nombre, SKU, vehículo..."
             value={busqueda}
@@ -226,15 +230,18 @@ export default function Inventario() {
       </div>
 
       {/* Tabla */}
-      <div className="card inv-table-wrap" style={{ padding:0, overflow:'hidden' }}>
-        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
+      <div className="card inv-table-wrap" style={{ padding:0, overflow: esMovil ? 'auto' : 'hidden' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', fontSize: esMovil ? '11px' : '13px', minWidth: esMovil ? '600px' : 'auto' }}>
           <thead>
             <tr style={{ background:'var(--gris-claro)',
               borderBottom:'0.5px solid var(--color-border)' }}>
-              {['Imagen','SKU','Nombre del Producto','Categoría','Vehículo Compatible',
-                'Stock','Precio Compra','Precio Venta','Estado','Acciones'].map(h => (
-                <th key={h} style={{ textAlign:'left', padding:'10px 12px',
-                  fontSize:'11px', fontWeight:600, color:'var(--color-text-muted)',
+              {(esMovil 
+                ? ['Imagen','SKU','Nombre','Stock','Acción']
+                : ['Imagen','SKU','Nombre del Producto','Categoría','Vehículo Compatible',
+                  'Stock','Precio Compra','Precio Venta','Estado','Acciones']
+              ).map(h => (
+                <th key={h} style={{ textAlign:'left', padding: esMovil ? '8px' : '10px 12px',
+                  fontSize: esMovil ? '10px' : '11px', fontWeight:600, color:'var(--color-text-muted)',
                   whiteSpace:'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -242,7 +249,7 @@ export default function Inventario() {
           <tbody>
             {paginados.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign:'center', padding:'32px',
+                <td colSpan={esMovil ? 5 : 10} style={{ textAlign:'center', padding:'32px',
                   color:'var(--color-text-muted)', fontSize:'13px' }}>
                   No se encontraron productos
                 </td>
@@ -254,44 +261,44 @@ export default function Inventario() {
                   borderBottom:'0.5px solid var(--color-border)',
                   background: i % 2 === 0 ? 'white' : '#FAFAFA',
                 }}>
-                  <td style={{ padding:'10px 12px' }}>
+                  <td style={{ padding: esMovil ? '8px' : '10px 12px' }}>
                     {p.imagen_url ? (
                       <img src={p.imagen_url} alt={p.nombre}
-                        style={{ width:'40px', height:'40px', objectFit:'cover',
+                        style={{ width: esMovil ? '32px' : '40px', height: esMovil ? '32px' : '40px', objectFit:'cover',
                           borderRadius:'6px', border:'0.5px solid var(--color-border)' }} />
                     ) : (
-                      <div style={{ width:'40px', height:'40px',
+                      <div style={{ width: esMovil ? '32px' : '40px', height: esMovil ? '32px' : '40px',
                         background:'var(--gris-claro)', borderRadius:'6px',
                         display:'flex', alignItems:'center', justifyContent:'center',
-                        fontSize:'10px', color:'var(--color-text-muted)' }}>
+                        fontSize:'9px', color:'var(--color-text-muted)' }}>
                         IMG
                       </div>
                     )}
                   </td>
-                  <td style={{ padding:'10px 12px', fontWeight:600, color:'#1A56DB' }}>{p.sku}</td>
-                  <td style={{ padding:'10px 12px', fontWeight:500 }}>{p.nombre}</td>
-                  <td style={{ padding:'10px 12px', color:'var(--color-text-muted)' }}>{p.categoria}</td>
-                  <td style={{ padding:'10px 12px', color:'var(--color-text-muted)' }}>{p.vehiculo}</td>
-                  <td style={{ padding:'10px 12px' }}>
-                    <span style={{ fontWeight:700, fontSize:'14px',
+                  <td style={{ padding: esMovil ? '8px' : '10px 12px', fontWeight:600, color:'#1A56DB', fontSize: esMovil ? '11px' : '13px' }}>{p.sku}</td>
+                  <td style={{ padding: esMovil ? '8px' : '10px 12px', fontWeight:500, fontSize: esMovil ? '11px' : '13px' }}>{p.nombre}</td>
+                  {!esMovil && <td style={{ padding:'10px 12px', color:'var(--color-text-muted)' }}>{p.categoria}</td>}
+                  {!esMovil && <td style={{ padding:'10px 12px', color:'var(--color-text-muted)' }}>{p.vehiculo}</td>}
+                  <td style={{ padding: esMovil ? '8px' : '10px 12px' }}>
+                    <span style={{ fontWeight:700, fontSize: esMovil ? '12px' : '14px',
                       color: getStockColor(p.stock, p.stock_minimo) }}>
                       {p.stock}
                     </span>
                   </td>
-                  <td style={{ padding:'10px 12px' }}>{formatLempiras(p.precio_compra)}</td>
-                  <td style={{ padding:'10px 12px', fontWeight:500 }}>{formatLempiras(p.precio_venta)}</td>
-                  <td style={{ padding:'10px 12px' }}>
+                  {!esMovil && <td style={{ padding:'10px 12px' }}>{formatLempiras(p.precio_compra)}</td>}
+                  {!esMovil && <td style={{ padding:'10px 12px', fontWeight:500 }}>{formatLempiras(p.precio_venta)}</td>}
+                  {!esMovil && <td style={{ padding:'10px 12px' }}>
                     <span className={`badge ${clase}`}>{texto}</span>
-                  </td>
-                  <td style={{ padding:'10px 12px' }}>
-                    <div style={{ display:'flex', gap:'8px' }}>
+                  </td>}
+                  <td style={{ padding: esMovil ? '8px' : '10px 12px' }}>
+                    <div style={{ display:'flex', gap: esMovil ? '6px' : '8px' }}>
                       <button onClick={() => abrirEditar(p)}
                         style={{ background:'none', border:'none',
-                          cursor:'pointer', fontSize:'16px' }}
+                          cursor:'pointer', fontSize: esMovil ? '14px' : '16px' }}
                         title="Editar">✏️</button>
                       <button onClick={() => setConfirm(p)}
                         style={{ background:'none', border:'none',
-                          cursor:'pointer', fontSize:'16px' }}
+                          cursor:'pointer', fontSize: esMovil ? '14px' : '16px' }}
                         title="Eliminar">🗑️</button>
                     </div>
                   </td>
@@ -304,18 +311,17 @@ export default function Inventario() {
         {/* Paginación */}
         {totalPaginas > 1 && (
           <div style={{ display:'flex', justifyContent:'space-between',
-            alignItems:'center', padding:'12px 16px',
+            alignItems:'center', padding: esMovil ? '10px 12px' : '12px 16px', flexWrap: esMovil ? 'wrap' : 'nowrap', gap: '8px',
             borderTop:'0.5px solid var(--color-border)' }}>
-            <span style={{ fontSize:'12px', color:'var(--color-text-muted)' }}>
-              Mostrando {((pagina-1)*POR_PAGINA)+1} a {Math.min(pagina*POR_PAGINA,
-              filtrados.length)} de {filtrados.length} resultados
+            <span style={{ fontSize: esMovil ? '10px' : '12px', color:'var(--color-text-muted)', minWidth: '100%' }}>
+              {esMovil ? `${pagina} / ${totalPaginas}` : `Mostrando ${((pagina-1)*POR_PAGINA)+1} a ${Math.min(pagina*POR_PAGINA, filtrados.length)} de ${filtrados.length}`}
             </span>
-            <div style={{ display:'flex', gap:'6px' }}>
+            <div style={{ display:'flex', gap: esMovil ? '4px' : '6px', justifyContent: esMovil ? 'center' : 'flex-end', minWidth: esMovil ? '100%' : 'auto' }}>
               <button className="btn btn-outline"
-                style={{ padding:'4px 10px', fontSize:'12px' }}
+                style={{ padding: esMovil ? '4px 8px' : '4px 10px', fontSize: esMovil ? '11px' : '12px' }}
                 onClick={() => setPagina(p => Math.max(1, p - 1))}
-                disabled={pagina === 1}>Anterior</button>
-              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+                disabled={pagina === 1}>{esMovil ? '◀' : 'Anterior'}</button>
+              {!esMovil && Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
                 <button key={n} onClick={() => setPagina(n)} style={{
                   padding:'4px 10px', fontSize:'12px', borderRadius:'6px',
                   border:'0.5px solid var(--color-border)', cursor:'pointer',
@@ -325,9 +331,9 @@ export default function Inventario() {
                 }}>{n}</button>
               ))}
               <button className="btn btn-outline"
-                style={{ padding:'4px 10px', fontSize:'12px' }}
+                style={{ padding: esMovil ? '4px 8px' : '4px 10px', fontSize: esMovil ? '11px' : '12px' }}
                 onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-                disabled={pagina === totalPaginas}>Siguiente</button>
+                disabled={pagina === totalPaginas}>{esMovil ? '▶' : 'Siguiente'}</button>
             </div>
           </div>
         )}
@@ -337,12 +343,12 @@ export default function Inventario() {
       {modal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)',
           display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
-          <div style={{ background:'white', borderRadius:'12px', padding:'24px',
-            width:'560px', maxWidth:'95vw', maxHeight:'90vh', overflowY:'auto' }}>
+          <div style={{ background:'white', borderRadius:'12px', padding: esMovil ? '16px' : '24px',
+            width: esMovil ? '90vw' : '560px', maxWidth:'95vw', maxHeight:'90vh', overflowY:'auto' }}>
 
             <div style={{ display:'flex', justifyContent:'space-between',
               alignItems:'center', marginBottom:'20px' }}>
-              <h2 style={{ fontSize:'16px', fontWeight:700 }}>
+              <h2 style={{ fontSize: esMovil ? '14px' : '16px', fontWeight:700 }}>
                 {editando ? 'Editar Producto' : 'Agregar Producto'}
               </h2>
               <button onClick={() => setModal(false)} style={{
@@ -350,7 +356,7 @@ export default function Inventario() {
                 fontSize:'20px', color:'var(--color-text-muted)' }}>✕</button>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
+            <div style={{ display:'grid', gridTemplateColumns: esMovil ? '1fr' : '1fr 1fr', gap: esMovil ? '10px' : '14px' }}>
               <div>
                 <label style={labelStyle}>SKU *</label>
                 <input style={inputStyle} value={form.sku}

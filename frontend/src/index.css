@@ -90,3 +90,110 @@ body {
   border-radius: 12px;
   padding: 16px;
 }
+
+/* ────────────────────────────────────────────────────────────── */
+/* MEDIA QUERIES - RESPONSIVE DESIGN                              */
+/* ────────────────────────────────────────────────────────────── */
+
+/* Mobile: < 640px */
+@media (max-width: 639px) {
+  :root {
+    font-size: 12px;
+  }
+
+  /* Padding global reducido en móvil */
+  main, .card, [style*="padding"] {
+    padding: 12px !important;
+  }
+
+  /* Botones más grandes en móvil para accesibilidad */
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /* Inputs más grandes */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Badges ajustadas */
+  .badge {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  /* Ocultar elementos no esenciales en móvil */
+  .hidden-mobile {
+    display: none;
+  }
+
+  /* Ajustar heading sizes */
+  h1 { font-size: 18px !important; }
+  h2 { font-size: 16px !important; }
+  h3 { font-size: 14px !important; }
+
+  /* Modal adjustments */
+  [style*="position: fixed"] {
+    padding: 12px !important;
+  }
+
+  /* Scrollable table wrapper */
+  .inv-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+/* Tablet: 640px - 1024px */
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    font-size: 13px;
+  }
+
+  .btn {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+
+  input, select, textarea {
+    min-height: 40px;
+  }
+
+  h1 { font-size: 20px !important; }
+  h2 { font-size: 15px !important; }
+}
+
+/* Landscape mobile: ajustes de altura */
+@media (max-height: 600px) {
+  .card {
+    padding: 10px;
+  }
+
+  .btn {
+    padding: 6px 12px;
+  }
+}
+
+/* Mejorar accesibilidad en todos los dispositivos */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode support (opcional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0F172A;
+    --color-surface: #1E293B;
+    --color-border: #334155;
+    --color-text: #F1F5F9;
+    --color-text-muted: #94A3B8;
+    --gris-claro: #334155;
+  }
+}
