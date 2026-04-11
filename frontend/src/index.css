@@ -185,15 +185,3 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
-
-/* Dark mode support (opcional) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0F172A;
-    --color-surface: #1E293B;
-    --color-border: #334155;
-    --color-text: #F1F5F9;
-    --color-text-muted: #94A3B8;
-    --gris-claro: #334155;
-  }
-}
