@@ -40,7 +40,7 @@ export default function Navbar() {
               objectFit:'contain', borderRadius:'50%' }} />
           <span style={{ color:'white', fontWeight:700,
             fontSize: esMovil ? '13px' : '15px' }}>
-            Optimus <span style={{ color:'#CC0000' }}>Moto Center</span>
+            Optimus <span style={{ color:'#CC0000' }}>Truck Repair</span>
           </span>
         </Link>
 

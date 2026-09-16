@@ -69,7 +69,7 @@ export default function Login() {
               borderRadius: '50%', marginBottom: '12px',
               border: '3px solid #CC0000' }} />
           <h1 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px' }}>
-            Optimus <span style={{ color: '#CC0000' }}>Moto Center</span>
+            Optimus <span style={{ color: '#CC0000' }}>Truck Repair</span>
           </h1>
           <p style={{ fontSize: '13px', color: '#64748B' }}>
             Sistema de Inventario

@@ -115,15 +115,18 @@ export default function Inventario() {
       p.nombre.toLowerCase().includes(texto) ||
       p.sku.toLowerCase().includes(texto)    ||
       (p.vehiculo || '').toLowerCase().includes(texto);
+
     const coincideCategoria =
       categoria === 'Todas' || p.categoria === categoria;
+
     const badge = getEstadoBadge(p.stock, p.stock_minimo).texto;
     const coincideEstado =
       estadoFiltro === 'Todos'                                   ||
       (estadoFiltro === 'Disponible' && badge === 'Disponible')  ||
       (estadoFiltro === 'Bajo'       && badge === 'Bajo')        ||
       (estadoFiltro === 'Crítico'    && badge === 'Sin stock');
-    return coincideBusqueda && coincideCategoria && coincideEstado;
+    
+      return coincideBusqueda && coincideCategoria && coincideEstado;
   });
 
   const totalPaginas = Math.ceil(filtrados.length / POR_PAGINA);

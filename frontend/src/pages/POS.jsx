@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import { formatLempiras } from '../utils/format';
 import { useWindowSize } from '../useWindowSize';
 
-const IVA = 0.15;
+const IVA = 0.07;
 
 function getEstadoBadge(stock, minimo) {
   if (stock === 0)     return { clase: 'badge-critico',    texto: 'Sin stock'  };
