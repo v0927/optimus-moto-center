@@ -389,47 +389,84 @@ export default function Inventario() {
         </div>
 
         {/* Paginación */}
-        {totalPaginas > 1 && (
-          <div style={{ display:'flex', justifyContent:'space-between',
-            alignItems:'center',
-            padding: esMovil ? '10px 12px' : '12px 16px',
-            flexWrap: esMovil ? 'wrap' : 'nowrap', gap:'8px',
-            borderTop:'0.5px solid var(--color-border)' }}>
-            <span style={{ fontSize: esMovil ? '11px' : '12px',
-              color:'var(--color-text-muted)' }}>
-              {esMovil
-                ? `Página ${pagina} de ${totalPaginas}`
-                : `Mostrando ${((pagina-1)*POR_PAGINA)+1} a ${Math.min(pagina*POR_PAGINA, filtrados.length)} de ${filtrados.length} resultados`}
-            </span>
-            <div style={{ display:'flex', gap: esMovil ? '4px' : '6px',
-              justifyContent: esMovil ? 'center' : 'flex-end',
-              width: esMovil ? '100%' : 'auto' }}>
-              <button className="btn btn-outline"
-                style={{ padding: esMovil ? '4px 8px' : '4px 10px',
-                  fontSize: esMovil ? '11px' : '12px' }}
-                onClick={() => setPagina(p => Math.max(1, p - 1))}
-                disabled={pagina === 1}>
-                {esMovil ? '◀' : 'Anterior'}
-              </button>
-              {!esMovil && Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
-                <button key={n} onClick={() => setPagina(n)} style={{
-                  padding:'4px 10px', fontSize:'12px', borderRadius:'6px',
-                  border:'0.5px solid var(--color-border)', cursor:'pointer',
-                  background: n === pagina ? '#CC0000' : 'white',
-                  color:      n === pagina ? 'white' : 'var(--color-text)',
-                  fontWeight: n === pagina ? 600 : 400,
-                }}>{n}</button>
-              ))}
-              <button className="btn btn-outline"
-                style={{ padding: esMovil ? '4px 8px' : '4px 10px',
-                  fontSize: esMovil ? '11px' : '12px' }}
-                onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-                disabled={pagina === totalPaginas}>
-                {esMovil ? '▶' : 'Siguiente'}
-              </button>
-            </div>
+      {totalPaginas > 1 && (
+        <div style={{ display:'flex', justifyContent:'space-between',
+          alignItems:'center',
+          padding: esMovil ? '10px 12px' : '12px 16px',
+          flexWrap: 'wrap', gap:'8px',
+          borderTop:'0.5px solid var(--color-border)' }}>
+
+          <span style={{ fontSize: esMovil ? '11px' : '12px',
+            color:'var(--color-text-muted)' }}>
+            Mostrando {((pagina-1)*POR_PAGINA)+1} a {Math.min(pagina*POR_PAGINA, filtrados.length)} de {filtrados.length} resultados
+          </span>
+
+          <div style={{ display:'flex', gap:'4px', alignItems:'center',
+            flexWrap:'wrap' }}>
+
+            {/* Botón Anterior */}
+            <button className="btn btn-outline"
+              style={{ padding:'4px 10px', fontSize:'12px' }}
+              onClick={() => setPagina(p => Math.max(1, p - 1))}
+              disabled={pagina === 1}>
+              ← Anterior
+            </button>
+
+            {/* Números inteligentes */}
+            {(() => {
+              const paginas = [];
+              const delta   = esMovil ? 1 : 2;
+
+              // Siempre mostrar página 1
+              paginas.push(1);
+
+              // "..." después del 1 si hay gap
+              if (pagina - delta > 2) paginas.push('...');
+
+              // Páginas alrededor de la actual
+              for (let i = Math.max(2, pagina - delta);
+                  i <= Math.min(totalPaginas - 1, pagina + delta); i++) {
+                paginas.push(i);
+              }
+
+              // "..." antes de la última si hay gap
+              if (pagina + delta < totalPaginas - 1) paginas.push('...');
+
+              // Siempre mostrar última página
+              if (totalPaginas > 1) paginas.push(totalPaginas);
+
+              return paginas.map((n, i) => {
+                if (n === '...') {
+                  return (
+                    <span key={`dots-${i}`} style={{ padding:'4px 6px',
+                      fontSize:'12px', color:'var(--color-text-muted)' }}>
+                      …
+                    </span>
+                  );
+                }
+                return (
+                  <button key={n} onClick={() => setPagina(n)} style={{
+                    padding:'4px 10px', fontSize:'12px', borderRadius:'6px',
+                    border:'0.5px solid var(--color-border)', cursor:'pointer',
+                    background: n === pagina ? '#CC0000' : 'white',
+                    color:      n === pagina ? 'white' : 'var(--color-text)',
+                    fontWeight: n === pagina ? 600 : 400,
+                    minWidth:   '32px', textAlign:'center',
+                  }}>{n}</button>
+                );
+              });
+            })()}
+
+            {/* Botón Siguiente */}
+            <button className="btn btn-outline"
+              style={{ padding:'4px 10px', fontSize:'12px' }}
+              onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+              disabled={pagina === totalPaginas}>
+              Siguiente →
+            </button>
           </div>
-        )}
+        </div>
+      )}
       </div>
 
       {/* MODAL Agregar / Editar */}
