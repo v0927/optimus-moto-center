@@ -18,7 +18,7 @@ function getStockColor(stock, minimo) {
 }
 
 const productoVacio = {
-  sku: '', nombre: '', categoria: '', vehiculo: '',
+  sku: '', nombre: '', categoria: '', vehiculo: '', marca: '',
   stock: 0, stock_minimo: 5, precio_compra: 0, precio_venta: 0,
   imagen_url: null, imagen_archivo: null,
 };
@@ -147,6 +147,7 @@ export default function Inventario() {
       nombre:         p.nombre,
       categoria:      p.categoria    || '',
       vehiculo:       p.vehiculo     || '',
+      marca:          p.marca        || '',
       stock:          p.stock,
       stock_minimo:   p.stock_minimo,
       precio_compra:  p.precio_compra,
@@ -189,6 +190,7 @@ export default function Inventario() {
       sku:           form.sku,
       nombre:        form.nombre,
       categoria:     form.categoria,
+      marca:         form.marca,
       vehiculo:      form.vehiculo,
       stock:         parseInt(form.stock),
       stock_minimo:  parseInt(form.stock_minimo),
@@ -516,6 +518,12 @@ export default function Inventario() {
                   placeholder="Ej: Honda Civic 2018-2023" />
               </div>
               <div>
+                <label style={labelStyle}>Marca</label>
+                <input style={inputStyle} value={form.marca}
+                  onChange={e => handleForm('marca', e.target.value)}
+                  placeholder="Ej: Bosch, Motul, Castrol..." />
+              </div>
+              <div>
                 <label style={labelStyle}>Stock actual</label>
                 <input style={inputStyle} type="number" min="0"
                   value={form.stock}
@@ -528,13 +536,13 @@ export default function Inventario() {
                   onChange={e => handleForm('stock_minimo', e.target.value)} />
               </div>
               <div>
-                <label style={labelStyle}>Precio de Compra (L)</label>
+                <label style={labelStyle}>Precio de Compra</label>
                 <input style={inputStyle} type="number" min="0" step="0.01"
                   value={form.precio_compra}
                   onChange={e => handleForm('precio_compra', e.target.value)} />
               </div>
               <div>
-                <label style={labelStyle}>Precio de Venta (L)</label>
+                <label style={labelStyle}>Precio de Venta</label>
                 <input style={inputStyle} type="number" min="0" step="0.01"
                   value={form.precio_venta}
                   onChange={e => handleForm('precio_venta', e.target.value)} />
